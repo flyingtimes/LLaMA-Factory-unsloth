@@ -20,3 +20,5 @@
 \[ English | [中文](README_zh.md) \]
 
 我对于项目配置做了修改，使得它能够直接适配unsloth
+
+在容器中可以使用unsloth-train-example.py跑unsloth
