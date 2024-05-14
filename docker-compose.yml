@@ -12,6 +12,8 @@ services:
       - ./output:/app/output
     environment:
       - CUDA_VISIBLE_DEVICES=0
+      - USE_MODELSCOPE_HUB=0
+      - HF_ENDPOINT=https://hf-mirror.com
     ports:
       - "7860:7860"
     ipc: host
