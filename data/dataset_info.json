@@ -14,6 +14,9 @@
   "identity": {
     "file_name": "identity.json"
   },
+  "identity_cgm": {
+    "file_name": "identity_cgm.json"
+  },
   "oaast_sft_zh": {
     "file_name": "oaast_sft_zh.json",
     "columns": {

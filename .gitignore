@@ -5,7 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
-
+# buffer directory
+hf_cache/
+output/
 # Distribution / packaging
 .Python
 build/
