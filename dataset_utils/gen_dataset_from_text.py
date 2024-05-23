@@ -3,18 +3,19 @@ from jinja2 import Environment, FileSystemLoader
 
 # 请将你的OpenAI API密钥替换为'YOUR_API_KEY'
 api_key = 'sk-KCqYq2dpuMwmS8r46Tu8mdht8FMb55TfQUNdb1RpfrTkP1ec'
-base_url = 'https://api.openai-proxy.org/v1'
+#base_url = 'https://api.openai-proxy.org/v1'
+base_url = 'http://127.0.0.1:1234/v1'
 
 client = OpenAI(api_key=api_key,base_url=base_url)
 # 加载模板文件
 loader = FileSystemLoader('.')
 env = Environment(loader=loader)
 # 获取模板
-template = env.get_template('template.txt')
+template = env.get_template('mobile1.txt')
 
 def answer_question(question):
     completion = client.chat.completions.create(
-    model="gpt-4o",
+    model="clarkchan/llama3-finetune",
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": question}
@@ -41,7 +42,7 @@ def parse_answer(answer):
 if __name__ == "__main__":
     ans = []
     for i in range(1, 5):
-        user_input = template.render(title="金融机构管理办法",pairs = ans)
+        user_input = template.render(title="中国移动无线网设备维护管理规定",pairs = ans)
         answer = answer_question(user_input)
         ans.extend(parse_answer(answer))
     
