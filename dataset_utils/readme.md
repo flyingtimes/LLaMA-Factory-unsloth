@@ -1,9 +1,9 @@
 ## 使用的conda环境
-'''
+```
 conda create -n dataset python=3.10
 conda install -c conda-forge poppler
 conda activate dataset
-'''
+```
 
 ## 总体思路
 
