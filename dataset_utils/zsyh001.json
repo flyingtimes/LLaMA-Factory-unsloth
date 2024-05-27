@@ -653,5 +653,12 @@
             "template": "template/pairs_with_title_Q.tmpl",
             "template1": "template/pairs_with_title_A.tmpl"
         }
+    },
+    {
+        "task_name": "export_to_xls",
+        "description": "将问答对导出",
+        "result": null,
+        "filename": "output.xlsx",
+        "function_call": "export_to_xls"
     }
 ]

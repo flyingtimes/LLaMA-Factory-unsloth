@@ -5,6 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 import os,json,re
 #   从配置文件读取环境变量
 from dotenv import load_dotenv 
+import pandas as pd
 load_dotenv(verbose=True)
 
 # 阿里云的配置信息
@@ -143,6 +144,16 @@ def pairs_with_title(atask,tasks):
                 print({"question": question,"answer": answer})
                 anss.append({"question": question,"answer": answer})
             return anss
+        
+def export_to_xls(atask,tasks):
+    for task in tasks:
+        if task["task_name"] == "pairs_with_title":
+            results = task["result"]
+            # 将JSON数组转换为DataFrame
+            dataframes = [pd.DataFrame([item]) for item in results]
+            df = pd.concat(dataframes, ignore_index=True)
+            # 写入Excel文件
+            df.to_excel(atask["filename"], index=False)
 def read_json_from_file(filename):
     with open(filename, 'r',encoding='utf-8') as json_file:
         loaded_data = json.load(json_file)
