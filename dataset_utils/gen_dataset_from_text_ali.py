@@ -1,20 +1,20 @@
+from multiprocessing.connection import answer_challenge
+from time import sleep
 from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 import os,json,re
 #   从配置文件读取环境变量
 from dotenv import load_dotenv 
-load_dotenv(".env")
+load_dotenv(verbose=True)
 
 # 阿里云的配置信息
 ali_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
-
 client = OpenAI(api_key=DASHSCOPE_API_KEY,base_url=ali_base_url)
 # 加载模板文件
 loader = FileSystemLoader('.')
 env = Environment(loader=loader)
-# 获取模板
-template = env.get_template('mobile1.txt')
+
 def get_response(question,modelname):
     MODEL_NAME = modelname
     completion = client.chat.completions.create(
@@ -59,11 +59,14 @@ def parse_answer(answer):
     ans = answer.split('\n')
     pairs = []
     i = 0
-    while i < (len(ans)):
-        pair = { "question":"", "answer":"" }
-        if ans[i].startswith('Q:') and ans[i+1].startswith('A:'):
-            pair["question"] = ans[i][2:]
-            pair["answer"] = ans[i+1][2:]
+    while i+1 < (len(ans)):
+        pair = { "question": "", "answer": "" }
+        question = ans[i].strip()
+        answer = ans[i+1].strip()
+        if question.startswith('Q:') and answer.startswith('A:'):
+            pair["question"] = question.strip("Q: ").strip("Q:").strip(" Q:").strip()
+            pair["answer"] = answer.strip("A: ").strip("A:").strip(" A:").strip()
+            print(pair)
             pairs.append(pair)
             i=i+1
         i=i+1
@@ -82,7 +85,7 @@ def keynote(atask,tasks):
             acontent = task["args"]["content"]
             break
     user_input = template.render(content=acontent)
-    answer = get_response(user_input,"qwen-long")
+    answer = get_response(user_input,"qwen-plus")
     return answer
 
 def category(atask,tasks):
@@ -98,8 +101,9 @@ def category(atask,tasks):
             answers = []
             for keynote in akeynote:
                 user_input = template.render(content=acontent,keynote=keynote)
-                answer = get_response(user_input,"qwen-long")
+                answer = get_response(user_input,"qwen-max-longcontext")
                 print(keynote+answer)
+                sleep(10)
                 answers.append(keynote+answer)
             return answers
             
@@ -118,26 +122,40 @@ def pairs(atask,tasks):
                 user_input = template.render(summary=summarize, content=result,title=atitle)
                 answer = get_response(user_input,"qwen-turbo")
                 array_answer = parse_answer(answer)
-                print(array_answer)
                 anss.extend(array_answer)
             return anss
 
-    
-
-
+def pairs_with_title(atask,tasks):
+    template = env.get_template(atask["args"]["template"])
+    template1 = env.get_template(atask["args"]["template1"])
+    for task in tasks:
+        if task["task_name"] == "pairs":
+            atitle = atask["title"]
+            results = task["result"]
+            anss = []
+            for result in results:
+                question = result["question"]
+                answer = result["answer"]
+                user_input = template.render(content=question,title=atitle)
+                question = get_response(user_input,"qwen-turbo")
+                user_input = template1.render(content=answer,title=atitle)
+                answer = get_response(user_input,"qwen-turbo")
+                print({"question": question,"answer": answer})
+                anss.append({"question": question,"answer": answer})
+            return anss
 def read_json_from_file(filename):
-    with open(filename, 'r') as json_file:
+    with open(filename, 'r',encoding='utf-8') as json_file:
         loaded_data = json.load(json_file)
     return loaded_data
 
 def save_json(a_json,filename):
-    with open(filename, 'w') as json_file:
+    with open(filename, 'w',encoding='utf-8') as json_file:
         json.dump(a_json, json_file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     
-    tasks = read_json_from_file("task001.json")
-    with open("mobile.txt", 'r', encoding='utf-8') as file:
+    tasks = read_json_from_file("zsyh001.json")
+    with open("zsyh.txt", 'r', encoding='utf-8') as file:
         content = file.read()
     tasks[0]["args"]["content"] = content
 
@@ -148,7 +166,7 @@ if __name__ == "__main__":
             task["result"] = globals()[task["function_call"]](task,tasks)
         output.append(task)
     
-    save_json(output,"task001.json")
+    save_json(output,"zsyh001.json")
     # anss = []
     # for i in range(1, 5):
     #     user_input = template.render(title="中国移动无线网设备维护管理规定",pairs = anss)
