@@ -6,6 +6,14 @@ import os,json,re
 #   从配置文件读取环境变量
 from dotenv import load_dotenv 
 import pandas as pd
+import argparse
+parser = argparse.ArgumentParser(description="从文本到量化模型，使用qwen-32b-chat")
+# 添加参数
+parser.add_argument("-f",dest="filename",type=str, help="json格式的配置文件")
+parser.add_argument("-t",dest="txtfilename",type=str, help="要学习的文本文件")
+# 解析参数
+args = parser.parse_args()
+
 load_dotenv(verbose=True)
 
 # 阿里云的配置信息
@@ -165,8 +173,8 @@ def save_json(a_json,filename):
 
 if __name__ == "__main__":
     
-    tasks = read_json_from_file("zsyh001.json")
-    with open("zsyh.txt", 'r', encoding='utf-8') as file:
+    tasks = read_json_from_file(args.filename)
+    with open(args.txtfilename, 'r', encoding='utf-8') as file:
         content = file.read()
     tasks[0]["args"]["content"] = content
 
@@ -177,7 +185,7 @@ if __name__ == "__main__":
             task["result"] = globals()[task["function_call"]](task,tasks)
         output.append(task)
     
-    save_json(output,"zsyh001.json")
+    save_json(output,args.filename)
     # anss = []
     # for i in range(1, 5):
     #     user_input = template.render(title="中国移动无线网设备维护管理规定",pairs = anss)
