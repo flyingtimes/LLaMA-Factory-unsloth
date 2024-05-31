@@ -2,7 +2,7 @@ from multiprocessing.connection import answer_challenge
 from time import sleep
 from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
-import os,json,re
+import os,json,re,random
 #   从配置文件读取环境变量
 from dotenv import load_dotenv 
 import pandas as pd
@@ -162,6 +162,79 @@ def export_to_xls(atask,tasks):
             df = pd.concat(dataframes, ignore_index=True)
             # 写入Excel文件
             df.to_excel(atask["filename"], index=False)
+    atask["result"] = "ok"
+
+def export_to_jsonl(atask,tasks):
+    for task in tasks:
+        if task["task_name"] == "pairs_with_title":
+            results = task["result"]
+            chatml_format_data = []
+            for result in results:
+                message = {"messages": [{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": result["question"]}, {"role": "assistant", "content": result["answer"]}]}
+                chatml_format_data.append(message)
+            with open(atask["filename"], 'w',encoding='utf-8') as f:
+                for message in chatml_format_data:
+                    json.dump(message, f)
+                    f.write('\n')
+            break
+    atask["result"] = "ok"
+
+
+def export_longchat_to_jsonl(atask,tasks):
+    for mtask in tasks:
+        if mtask["task_name"] == "pairs":
+            mresults = mtask["result"]
+            break
+    for task in tasks:
+        if task["task_name"] == "pairs_with_title":
+            results = task["result"]
+            chatml_format_data = []
+            for result in results:
+                system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
+                user_prompt =f"<|im_start|>user\n{result['question']}<|im_end|>\n"
+                assistant_prompt = f"<|im_start|>assistant\n{result['answer']}<|im_end|>"
+                message = system_prompt + user_prompt + assistant_prompt
+                print(message)
+                chatml_format_data.append({"text":message})
+            ## 多轮数据扩充
+            for m in range(20):
+                for h in range(2,7):
+                    numbers = list(range(1, len(results)))
+                    random.shuffle(numbers)
+                    group_size = h # 每组的大小为h 个对话
+                    for i in range(0, len(numbers), group_size):
+                        group = numbers[i:i + group_size]
+                        #m = [{"role": "system", "content": "You are a helpful assistant"}]
+                        system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
+                        user_prompt =f"<|im_start|>user\n{results[i]['question']}<|im_end|>\n"
+                        assistant_prompt = f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
+                        m = system_prompt + user_prompt + assistant_prompt
+                        #m.append({"role": "user", "content": results[i]["question"]})
+                        #m.append({"role": "assistant", "content": mresults[i]["answer"]})
+                        for item in group:
+                            m += f"<|im_start|>user\n{mresults[i]['question']}<|im_end|>\n"
+                            m += f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
+                            #m.append({"role": "user", "content": mresults[i]["question"]})
+                            #m.append({"role": "assistant", "content": mresults[i]["answer"]})
+                        #message ={"messages":m}
+                        chatml_format_data.append({"text":m})
+
+            with open(atask["filename"], 'w',encoding='utf-8') as f:
+                for message in chatml_format_data:
+                    json.dump(message, f)
+                    f.write('\n')
+
+
+
+
+
+
+
+
+
+            break
+    atask["result"] = "ok"
+
 def read_json_from_file(filename):
     with open(filename, 'r',encoding='utf-8') as json_file:
         loaded_data = json.load(json_file)

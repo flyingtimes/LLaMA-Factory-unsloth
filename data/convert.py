@@ -3,8 +3,8 @@ import json
 def convert_to_chatml(json_data):
     chatml_format_data = []
     for dialogue in json_data:
-        chatml_dialogue = {"messages": [{"role": "system", "content": "You are a helpful assistant"},{"role": "user", "content": dialogue["instruction"]},{"role": "assistant", "content": dialogue["output"]}]}
-        chatml_format_data.append(chatml_dialogue)
+        chatml_dialogue = f"<|im_start|>system\nYou are a helpful assistant<|im_end|>\n<|im_start|>user\n{dialogue['instruction']}<|im_end|>\n|im_start|>assistant\n{dialogue['output']}<|im_end|>"
+        chatml_format_data.append({"text": chatml_dialogue})
     return chatml_format_data
 
 def write_to_jsonl(data, output_file):
