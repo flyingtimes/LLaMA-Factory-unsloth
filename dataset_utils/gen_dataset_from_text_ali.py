@@ -19,6 +19,8 @@ load_dotenv(verbose=True)
 # 阿里云的配置信息
 ali_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+# 本地lm-studio 配置
+#base_url="http://127.0.0.1:1234/v1"
 client = OpenAI(api_key=DASHSCOPE_API_KEY,base_url=ali_base_url)
 # 加载模板文件
 loader = FileSystemLoader('.')
@@ -84,7 +86,7 @@ def parse_answer(answer):
 def summarize(atask,tasks):
     template = env.get_template(atask["args"]["template"])
     user_input = template.render(content=atask["args"]["content"])
-    answer = get_response(user_input,"qwen-long")
+    answer = get_response(user_input,"qwen-plus")
     return answer
 
 def keynote(atask,tasks):
@@ -95,6 +97,7 @@ def keynote(atask,tasks):
             break
     user_input = template.render(content=acontent)
     answer = get_response(user_input,"qwen-plus")
+    print(answer)
     return answer
 
 def category(atask,tasks):
@@ -110,10 +113,11 @@ def category(atask,tasks):
             answers = []
             for keynote in akeynote:
                 user_input = template.render(content=acontent,keynote=keynote)
-                answer = get_response(user_input,"qwen-max-longcontext")
+                answer = get_response(user_input,"qwen-plus")
                 print(keynote+answer)
                 sleep(10)
                 answers.append(keynote+answer)
+                sleep(5)
             return answers
             
     
@@ -190,12 +194,16 @@ def export_longchat_to_jsonl(atask,tasks):
             results = task["result"]
             chatml_format_data = []
             for result in results:
-                system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
-                user_prompt =f"<|im_start|>user\n{result['question']}<|im_end|>\n"
-                assistant_prompt = f"<|im_start|>assistant\n{result['answer']}<|im_end|>"
-                message = system_prompt + user_prompt + assistant_prompt
+                #system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
+                #user_prompt =f"<|im_start|>user\n{result['question']}<|im_end|>\n"
+                #assistant_prompt = f"<|im_start|>assistant\n{result['answer']}<|im_end|>"
+                #message = system_prompt + user_prompt + assistant_prompt
+                m = [{"role": "system", "content": "You are a helpful assistant."}]
+                m.append({"role": "user", "content": result["question"]})
+                m.append({"role": "assistant", "content": result["answer"]})
+                message ={"messages":m}
                 print(message)
-                chatml_format_data.append({"text":message})
+                chatml_format_data.append(message)
             ## 多轮数据扩充
             for m in range(20):
                 for h in range(2,7):
@@ -204,34 +212,26 @@ def export_longchat_to_jsonl(atask,tasks):
                     group_size = h # 每组的大小为h 个对话
                     for i in range(0, len(numbers), group_size):
                         group = numbers[i:i + group_size]
-                        #m = [{"role": "system", "content": "You are a helpful assistant"}]
-                        system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
-                        user_prompt =f"<|im_start|>user\n{results[i]['question']}<|im_end|>\n"
-                        assistant_prompt = f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
-                        m = system_prompt + user_prompt + assistant_prompt
-                        #m.append({"role": "user", "content": results[i]["question"]})
-                        #m.append({"role": "assistant", "content": mresults[i]["answer"]})
+                        m = [{"role": "system", "content": "You are a helpful assistant."}]
+                        #system_prompt = "<|im_start|>system\nYou are a helpful assistant<|im_end|>\n"
+                        #user_prompt =f"<|im_start|>user\n{results[i]['question']}<|im_end|>\n"
+                        #assistant_prompt = f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
+                        #m = system_prompt + user_prompt + assistant_prompt
+                        m.append({"role": "user", "content": results[i]["question"]})
+                        m.append({"role": "assistant", "content": mresults[i]["answer"]})
                         for item in group:
-                            m += f"<|im_start|>user\n{mresults[i]['question']}<|im_end|>\n"
-                            m += f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
-                            #m.append({"role": "user", "content": mresults[i]["question"]})
-                            #m.append({"role": "assistant", "content": mresults[i]["answer"]})
-                        #message ={"messages":m}
-                        chatml_format_data.append({"text":m})
+                            #m += f"<|im_start|>user\n{mresults[i]['question']}<|im_end|>\n"
+                            #m += f"<|im_start|>assistant\n{mresults[i]['answer']}<|im_end|>\n"
+                            m.append({"role": "user", "content": mresults[item]["question"]})
+                            m.append({"role": "assistant", "content": mresults[item]["answer"]})
+                        message ={"messages":m}
+                        chatml_format_data.append(message)
+                        #chatml_format_data.append({"text":m})
 
-            with open(atask["filename"], 'w',encoding='utf-8') as f:
+            with open(atask["filename"], 'w', encoding='utf-8') as f:
                 for message in chatml_format_data:
-                    json.dump(message, f)
+                    json.dump(message, f, ensure_ascii=False)
                     f.write('\n')
-
-
-
-
-
-
-
-
-
             break
     atask["result"] = "ok"
 

@@ -3,14 +3,18 @@ import json
 def convert_to_chatml(json_data):
     chatml_format_data = []
     for dialogue in json_data:
-        chatml_dialogue = f"<|im_start|>system\nYou are a helpful assistant<|im_end|>\n<|im_start|>user\n{dialogue['instruction']}<|im_end|>\n|im_start|>assistant\n{dialogue['output']}<|im_end|>"
-        chatml_format_data.append({"text": chatml_dialogue})
+        #chatml_dialogue = f"<|im_start|>system\nYou are a helpful assistant<|im_end|>\n<|im_start|>user\n{dialogue['instruction']}<|im_end|>\n|im_start|>assistant\n{dialogue['output']}<|im_end|>"
+        #chatml_format_data.append({"text": chatml_dialogue})
+        m = [{"role": "system", "content": "You are a helpful assistant."}]
+        m.append({"role": "user", "content": dialogue['instruction']})
+        m.append({"role": "assistant", "content": dialogue['output']})
+        chatml_format_data.append({"messages": m})
     return chatml_format_data
 
 def write_to_jsonl(data, output_file):
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         for dialogue in data:
-            json.dump(dialogue, f)
+            json.dump(dialogue, f, ensure_ascii=False)
             f.write('\n')
 
 # 读取alpaca的JSON数据
